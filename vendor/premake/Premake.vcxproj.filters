@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="..">
+      <UniqueIdentifier>{61705900-4DFC-870B-B6AA-880BA255880B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\VulkanTest">
+      <UniqueIdentifier>{016CD352-6D2C-4F89-3667-9806A2E69365}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\VulkanTest\vendor">
+      <UniqueIdentifier>{3E571776-2AE6-A03F-D304-B53ABF72B1E5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\VulkanTest\vendor\GLFW">
+      <UniqueIdentifier>{3D496061-A90B-94EB-F2BB-22785EBD6CC9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\VulkanTest\premake5.lua">
+      <Filter>..\VulkanTest</Filter>
+    </None>
+    <None Include="..\..\VulkanTest\vendor\GLFW\premake5.lua">
+      <Filter>..\VulkanTest\vendor\GLFW</Filter>
+    </None>
+    <None Include="..\..\premake5.lua">
+      <Filter>..</Filter>
+    </None>
+    <None Include="premake5.lua" />
+  </ItemGroup>
+</Project>
