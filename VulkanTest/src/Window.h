@@ -97,13 +97,16 @@ private:
 	std::vector<VkFramebuffer> m_SwapChainFramebuffers;
 
 	VkCommandPool m_CommandPool;
-	VkCommandBuffer m_CommandBuffer;
+	std::vector<VkCommandBuffer> m_CommandBuffers;
 
 	VkQueue m_GraphicsQueue, m_PresentQueue;
 
-	VkSemaphore m_ImageAvailableSemaphore;
-	VkSemaphore m_RenderFinishedSemaphore;
-	VkFence m_InFlightFence;
+	const int MAX_FRAMES_IN_FLIGHT = 2;
+	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
+	std::vector<VkFence> m_InFlightFences;
+
+	uint32_t m_CurrentFrame = 0;
 
 	const std::vector<const char*> m_DeviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
