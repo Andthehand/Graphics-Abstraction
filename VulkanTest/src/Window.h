@@ -53,6 +53,13 @@ private:
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 	void CreateSwapChain();
+
+	void CreateImageViews();
+
+	void CreateRenderPass();
+
+	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+	void CreateGraphicsPipeline();
 private:
 	VkInstance m_Instance;
 
@@ -68,9 +75,14 @@ private:
 	VkDevice m_Device;
 
 	VkSwapchainKHR m_SwapChain;
-	std::vector<VkImage> swapChainImages;
+	std::vector<VkImage> m_SwapChainImages;
 	VkFormat m_SwapChainImageFormat;
 	VkExtent2D m_SwapChainExtent;
+	std::vector<VkImageView> m_SwapChainImageViews;
+
+	VkRenderPass m_RenderPass;
+	VkPipelineLayout m_PipelineLayout;
+	VkPipeline m_GraphicsPipeline;
 
 	VkQueue m_GraphicsQueue, m_PresentQueue;
 
