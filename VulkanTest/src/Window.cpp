@@ -3,8 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <map>
-#include <optional>
-
+#include <set>  
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -44,15 +43,7 @@ void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& create
     createInfo.pfnUserCallback = DebugCallback;
 }
 
-struct QueueFamilyIndices {
-    std::optional<uint32_t> GraphicsFamily;
-
-    bool IsComplete() {
-        return GraphicsFamily.has_value();
-    }
-};
-
-QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) {
+QueueFamilyIndices Window::FindQueueFamilies(VkPhysicalDevice device) {
     QueueFamilyIndices indices;
    
     uint32_t queueFamilyCount = 0;
@@ -63,6 +54,13 @@ QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) {
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies) {
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_Surface, &presentSupport);
+
+        if (presentSupport) {
+            indices.PresentFamily = i;
+        }
+
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.GraphicsFamily = i;
         }
@@ -88,8 +86,14 @@ void Window::SetupDebugMessenger() {
     }
 }
 
+void Window::CreateSurface() {
+    if (glfwCreateWindowSurface(m_Instance, m_Window, nullptr, &m_Surface) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create window surface!");
+    }
+}
+
 //Incase you need to check if the GPU is able to run the program
-bool IsDeviceSuitable(VkPhysicalDevice device) {
+bool Window::IsDeviceSuitable(VkPhysicalDevice device) {
     QueueFamilyIndices indices = FindQueueFamilies(device);
 
     return indices.IsComplete();
@@ -119,21 +123,26 @@ void Window::PickPhysicalDevice() {
 void Window::CreateLogicalDevice() {
     QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
 
-    VkDeviceQueueCreateInfo queueCreateInfo{};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = indices.GraphicsFamily.value();
-    queueCreateInfo.queueCount = 1;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = { indices.GraphicsFamily.value(), indices.PresentFamily.value() };
 
     float queuePriority = 1.0f;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
-    createInfo.queueCreateInfoCount = 1;
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
     createInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -152,11 +161,12 @@ void Window::CreateLogicalDevice() {
     }
 
     vkGetDeviceQueue(m_Device, indices.GraphicsFamily.value(), 0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_Device, indices.PresentFamily.value(), 0, &m_GraphicsQueue);
 }
 
 Window::Window(uint32_t width, uint32_t height, const char* name) {
-    InitVulkan();
     InitWindow(width, height, name);
+    InitVulkan();
 }
 
 Window::~Window() {
@@ -164,6 +174,7 @@ Window::~Window() {
         DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
     }
 
+    vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
     vkDestroyDevice(m_Device, nullptr);
 
@@ -183,6 +194,7 @@ void Window::OnUpdate() {
 void Window::InitVulkan() {
     CreateInstance();
     SetupDebugMessenger();
+    CreateSurface();
     PickPhysicalDevice();
     CreateLogicalDevice();
 }
