@@ -37,6 +37,9 @@ project "VulkanTest"
 	filter "configurations:Debug"
 		runtime "Debug"
 		symbols "on"
+		defines {
+			"DEBUG"
+		}
 
 	filter "configurations:Release"
 		runtime "Release"
