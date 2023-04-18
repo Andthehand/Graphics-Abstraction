@@ -49,16 +49,20 @@ private:
 
 	void InitWindow(uint32_t width, uint32_t height, const char* name);
 
+	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
+
 	bool CheckValidationLayerSupport();
 	std::vector<const char*> GetRequiredExtensions();
+
+	void RecreateSwapChain();
 
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 	void CreateSwapChain();
-
 	void CreateImageViews();
-
 	void CreateRenderPass();
+
+	void CleanupSwapChain();
 
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 	void CreateGraphicsPipeline();
@@ -71,6 +75,12 @@ private:
 
 	void CreateSyncObjects();
 private:
+#ifdef DEBUG
+	const bool m_EnableValidationLayers = true;
+#else
+	const bool m_EnableValidationLayers = false;
+#endif
+
 	VkInstance m_Instance;
 
 	const std::vector<const char*> m_ValidationLayers = {
@@ -81,6 +91,9 @@ private:
 	GLFWwindow* m_Window;
 	VkSurfaceKHR m_Surface;
 
+	const std::vector<const char*> m_DeviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
 	VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 	VkDevice m_Device;
 
@@ -106,15 +119,7 @@ private:
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
 	std::vector<VkFence> m_InFlightFences;
 
+	bool m_FramebufferResized = false;
+
 	uint32_t m_CurrentFrame = 0;
-
-	const std::vector<const char*> m_DeviceExtensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
-	};
-
-#ifdef DEBUG
-	const bool m_EnableValidationLayers = true;
-#else
-	const bool m_EnableValidationLayers = false;
-#endif
 };

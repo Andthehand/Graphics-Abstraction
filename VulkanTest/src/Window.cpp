@@ -199,22 +199,20 @@ Window::Window(uint32_t width, uint32_t height, const char* name) {
 }
 
 Window::~Window() {
-    for (auto imageView : m_SwapChainImageViews) {
-        vkDestroyImageView(m_Device, imageView, nullptr);
-    }
-    for (auto framebuffer : m_SwapChainFramebuffers) {
-        vkDestroyFramebuffer(m_Device, framebuffer, nullptr);
-    }
+    CleanupSwapChain();
+
     vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
-    vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
+    
     vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
+    
     vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(m_Device, m_RenderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(m_Device, m_ImageAvailableSemaphores[i], nullptr);
         vkDestroyFence(m_Device, m_InFlightFences[i], nullptr);
     }
+    
     vkDestroyDevice(m_Device, nullptr);
     
     if (m_EnableValidationLayers) {
@@ -241,10 +239,19 @@ void Window::OnUpdate() {
 
 void Window::DrawFrame() {
     vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        RecreateSwapChain();
+        return;
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
+    vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame]);
 
     vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrame], 0);
     RecordCommandBuffer(m_CommandBuffers[m_CurrentFrame], imageIndex);
@@ -281,7 +288,15 @@ void Window::DrawFrame() {
 
     presentInfo.pImageIndices = &imageIndex;
 
-    vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+    result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResized) {
+        m_FramebufferResized = false;
+        RecreateSwapChain();
+    }
+    else if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
 
     m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -349,9 +364,15 @@ void Window::InitWindow(uint32_t width, uint32_t height, const char* name) {
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     m_Window = glfwCreateWindow(width, height, name, nullptr, nullptr);
+    glfwSetWindowUserPointer(m_Window, this);
+    glfwSetFramebufferSizeCallback(m_Window, FramebufferResizeCallback);
+}
+
+void Window::FramebufferResizeCallback(GLFWwindow* window, int width, int height) {
+    auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+    app->m_FramebufferResized = true;
 }
 
 bool Window::CheckValidationLayerSupport() {
@@ -391,6 +412,23 @@ std::vector<const char*> Window::GetRequiredExtensions() {
     }
 
     return extensions;
+}
+
+void Window::RecreateSwapChain() {
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(m_Window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(m_Window, &width, &height);
+        glfwWaitEvents();
+    }
+
+    vkDeviceWaitIdle(m_Device);
+
+    CleanupSwapChain();
+
+    CreateSwapChain();
+    CreateImageViews();
+    CreateFramebuffers();
 }
 
 SwapChainSupportDetails Window::QuerySwapChainSupport(VkPhysicalDevice device) {
@@ -487,6 +525,18 @@ void Window::CreateRenderPass() {
     if (vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
+}
+
+void Window::CleanupSwapChain() {
+    for (size_t i = 0; i < m_SwapChainFramebuffers.size(); i++) {
+        vkDestroyFramebuffer(m_Device, m_SwapChainFramebuffers[i], nullptr);
+    }
+
+    for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
+        vkDestroyImageView(m_Device, m_SwapChainImageViews[i], nullptr);
+    }
+
+    vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
 }
 
 void Window::CreateSwapChain() {
