@@ -193,7 +193,7 @@ void Window::CreateLogicalDevice() {
     vkGetDeviceQueue(m_Device, indices.PresentFamily.value(), 0, &m_PresentQueue);
 }
 
-Window::Window(uint32_t width, uint32_t height, const char* name) {
+void Window::Init(uint32_t width, uint32_t height, const char* name) {
     InitWindow(width, height, name);
     InitVulkan();
 }
@@ -212,6 +212,8 @@ Window::~Window() {
         vkDestroySemaphore(m_Device, m_ImageAvailableSemaphores[i], nullptr);
         vkDestroyFence(m_Device, m_InFlightFences[i], nullptr);
     }
+
+    m_VertexBuffer.Destroy();
     
     vkDestroyDevice(m_Device, nullptr);
     
@@ -313,6 +315,7 @@ void Window::InitVulkan() {
     CreateGraphicsPipeline();
     CreateFramebuffers();
     CreateCommandPool();
+    m_VertexBuffer.Init();
     CreateCommandBuffer();
     CreateSyncObjects();
 }
@@ -674,10 +677,14 @@ void Window::CreateGraphicsPipeline() {
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+
+    auto bindingDescription = Vertex::GetBindingDescription();
+    auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -882,7 +889,9 @@ void Window::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
     scissor.extent = m_SwapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    m_VertexBuffer.Bind(commandBuffer);
+
+    vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {

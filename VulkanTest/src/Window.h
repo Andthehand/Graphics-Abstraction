@@ -1,4 +1,6 @@
 #pragma once
+#include "Vulkan/VBO.h"
+
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -25,13 +27,17 @@ struct SwapChainSupportDetails {
 
 class Window {
 public:
-	Window(uint32_t width, uint32_t height, const char* name);
+	Window() = default;
 	~Window();
+
+	void Init(uint32_t width, uint32_t height, const char* name);
 
 	bool ShouldClose();
 
 	void OnUpdate();
 
+	VkPhysicalDevice GetPhysicalDevice() { return m_PhysicalDevice; }
+	VkDevice GetDevice() { return m_Device; }
 private:
 	void DrawFrame();
 
@@ -118,6 +124,8 @@ private:
 	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
 	std::vector<VkFence> m_InFlightFences;
+
+	VBO m_VertexBuffer;
 
 	bool m_FramebufferResized = false;
 
