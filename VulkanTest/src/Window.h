@@ -33,6 +33,8 @@ public:
 	void OnUpdate();
 
 private:
+	void DrawFrame();
+
 	void InitVulkan();
 	void CreateInstance();
 	void SetupDebugMessenger();
@@ -66,6 +68,8 @@ private:
 	void CreateCommandPool();
 	void CreateCommandBuffer();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+	void CreateSyncObjects();
 private:
 	VkInstance m_Instance;
 
@@ -96,6 +100,10 @@ private:
 	VkCommandBuffer m_CommandBuffer;
 
 	VkQueue m_GraphicsQueue, m_PresentQueue;
+
+	VkSemaphore m_ImageAvailableSemaphore;
+	VkSemaphore m_RenderFinishedSemaphore;
+	VkFence m_InFlightFence;
 
 	const std::vector<const char*> m_DeviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
