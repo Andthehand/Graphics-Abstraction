@@ -17,6 +17,12 @@ struct QueueFamilyIndices {
 	}
 };
 
+struct SwapChainSupportDetails {
+	VkSurfaceCapabilitiesKHR Capabilities;
+	std::vector<VkSurfaceFormatKHR> Formats;
+	std::vector<VkPresentModeKHR> PresentModes;
+};
+
 class Window {
 public:
 	Window(uint32_t width, uint32_t height, const char* name);
@@ -36,25 +42,41 @@ private:
 	
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 
+	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 
 	void InitWindow(uint32_t width, uint32_t height, const char* name);
 
 	bool CheckValidationLayerSupport();
 	std::vector<const char*> GetRequiredExtensions();
+
+	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
+	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+	void CreateSwapChain();
 private:
-	GLFWwindow* m_Window;
+	VkInstance m_Instance;
 
 	const std::vector<const char*> m_ValidationLayers = {
 		"VK_LAYER_KHRONOS_validation"
 	};
-	VkInstance m_Instance;
 	VkDebugUtilsMessengerEXT m_DebugMessenger;
+	
+	GLFWwindow* m_Window;
 	VkSurfaceKHR m_Surface;
+
 	VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
 	VkDevice m_Device;
 
+	VkSwapchainKHR m_SwapChain;
+	std::vector<VkImage> swapChainImages;
+	VkFormat m_SwapChainImageFormat;
+	VkExtent2D m_SwapChainExtent;
+
 	VkQueue m_GraphicsQueue, m_PresentQueue;
+
+	const std::vector<const char*> m_DeviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
 
 #ifdef DEBUG
 	const bool m_EnableValidationLayers = true;
