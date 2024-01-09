@@ -4,6 +4,12 @@
     <Filter Include="src">
       <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Vulkan">
+      <UniqueIdentifier>{0DC45B36-F97B-9D83-6283-76DF4E5A3874}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Windows">
+      <UniqueIdentifier>{6732F132-D3E7-6928-5CDC-63FFC890602C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="vendor">
       <UniqueIdentifier>{B3738122-9F15-ACF8-88D0-BF4C74113349}</UniqueIdentifier>
     </Filter>
@@ -30,8 +36,26 @@
     <ClInclude Include="src\Application.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\Window.h">
+    <ClInclude Include="src\GraphicsAPI.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vulkan\VkBuffer.h">
+      <Filter>src\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vulkan\VkDevice.h">
+      <Filter>src\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vulkan\VkFrameBuffer.h">
+      <Filter>src\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vulkan\VkPipeline.h">
+      <Filter>src\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vulkan\VkRenderer.h">
+      <Filter>src\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Windows\Window.h">
+      <Filter>src\Windows</Filter>
     </ClInclude>
     <ClInclude Include="vendor\glm\glm\common.hpp">
       <Filter>vendor\glm\glm</Filter>
@@ -1281,7 +1305,8 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp">
       <Filter>vendor\glm\glm</Filter>
     </ClInclude>
-    <ClInclude Include="src\Vulkan\VBO.h" />
+    <ClInclude Include="src\Vulkan\VkRendererAPI.h" />
+    <ClInclude Include="src\Renderer\RenderCommand.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Application.cpp">
@@ -1290,9 +1315,25 @@
     <ClCompile Include="src\Main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Window.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="src\Vulkan\VkBuffer.cpp">
+      <Filter>src\Vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="src\Vulkan\VBO.cpp" />
+    <ClCompile Include="src\Vulkan\VkDevice.cpp">
+      <Filter>src\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\VkFrameBuffer.cpp">
+      <Filter>src\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\VkPipeline.cpp">
+      <Filter>src\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\VkRenderer.cpp">
+      <Filter>src\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Windows\Window.cpp">
+      <Filter>src\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan\VkRendererAPI.cpp" />
+    <ClCompile Include="src\Renderer\RenderCommand.cpp" />
   </ItemGroup>
 </Project>

@@ -16,7 +16,8 @@ project "VulkanTest"
 
 	defines {
 		"_CRT_SECURE_NO_WARNINGS",
-		"GLFW_INCLUDE_NONE"
+		"GLFW_INCLUDE_NONE",
+		"Vulkan"
 	}
 
 	includedirs {
