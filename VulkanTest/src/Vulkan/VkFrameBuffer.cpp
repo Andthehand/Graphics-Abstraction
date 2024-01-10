@@ -1,9 +1,14 @@
 #include "VkFrameBuffer.h"
 
+#include "Application.h"
+
 #include "VkDevice.h"
 
-FrameBuffer::FrameBuffer(FramebufferDescriptions frameBufferSpecification) 
+FrameBuffer::FrameBuffer(const FramebufferDescription& frameBufferSpecification) 
 	: m_FramebufferDescription(frameBufferSpecification) {
+	CreateSwapChain();
+	CreateImageViews();
+	CreateRenderPass();
 	CreateFramebuffers();
 }
 
@@ -13,6 +18,13 @@ FrameBuffer::~FrameBuffer() {
 	for (auto framebuffer : m_Framebuffers) {
 		vkDestroyFramebuffer(device, framebuffer, nullptr);
 	}
+
+    for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
+        vkDestroyImageView(device, m_SwapChainImageViews[i], nullptr);
+    }
+
+    vkDestroySwapchainKHR(device, m_SwapChain, nullptr);
+    vkDestroyRenderPass(device, m_RenderPass, nullptr);
 }
 
 void FrameBuffer::CreateSwapChain() {
@@ -22,7 +34,7 @@ void FrameBuffer::CreateSwapChain() {
 
     VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.Formats);
     VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.PresentModes);
-    m_SwapChainExtent = { m_FramebufferDescription.Width, m_FramebufferDescription.Height };
+    m_SwapChainExtent = ChooseSwapExtent(swapChainSupport.Capabilities);
 
     uint32_t imageCount = swapChainSupport.Capabilities.minImageCount + 1;
     if (swapChainSupport.Capabilities.maxImageCount > 0 && imageCount > swapChainSupport.Capabilities.maxImageCount) {
@@ -174,11 +186,31 @@ VkSurfaceFormatKHR FrameBuffer::ChooseSwapSurfaceFormat(const std::vector<VkSurf
 }
 
 VkPresentModeKHR FrameBuffer::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
-    for (const auto& availablePresentMode : availablePresentModes) {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-            return availablePresentMode;
-        }
-    }
+    //for (const auto& availablePresentMode : availablePresentModes) {
+    //    if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+    //        return availablePresentMode;
+    //    }
+    //}
 
     return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D FrameBuffer::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+    if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
+        return capabilities.currentExtent;
+    }
+    else {
+        int width, height;
+        glfwGetFramebufferSize(Application::Get().GetWindow().GetWindowHandle(), &width, &height);
+
+        VkExtent2D actualExtent = {
+            static_cast<uint32_t>(width),
+            static_cast<uint32_t>(height)
+        };
+
+        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+        return actualExtent;
+    }
 }

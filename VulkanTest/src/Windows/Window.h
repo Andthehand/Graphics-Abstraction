@@ -12,6 +12,7 @@ public:
 	~Window();
 
 	void OnUpdate();
+	void OnRender();
 
 	bool ShouldClose();
 

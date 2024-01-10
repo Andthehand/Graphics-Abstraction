@@ -21,5 +21,7 @@ void Application::MainLoop() {
     while (!m_Window.ShouldClose()) {
         m_Window.OnUpdate();
         Renderer::DrawFrame();
+
+        m_Window.OnRender();
     }
 }

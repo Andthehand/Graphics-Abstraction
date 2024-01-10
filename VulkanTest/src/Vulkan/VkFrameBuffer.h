@@ -50,7 +50,7 @@ struct FramebufferAttachmentSpecification {
 	std::vector<FramebufferTextureSpecification> Attachments;
 };
 
-struct FramebufferDescriptions {
+struct FramebufferDescription {
 	FramebufferAttachmentSpecification Attachments;
 
 	uint32_t Width, Height;
@@ -76,8 +76,15 @@ struct FramebufferDescriptions {
 
 class FrameBuffer {
 public:
-	FrameBuffer(const FramebufferDescriptions frameBufferSpecification);
+	FrameBuffer(const FramebufferDescription& frameBufferSpecification);
 	~FrameBuffer();
+
+	VkSwapchainKHR GetSwapChain() const { return m_SwapChain; }
+	VkRenderPass GetRenderPass() const { return m_RenderPass; }
+
+	VkFramebuffer GetFramebuffer(uint32_t index) const { return m_Framebuffers[index]; }
+
+	const VkExtent2D& GetExtent() const { return m_SwapChainExtent; }
 private:
 	void CreateSwapChain();
 	void CreateImageViews();
@@ -88,8 +95,9 @@ private:
 
 	VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 private:
-	FramebufferDescriptions m_FramebufferDescription;
+	FramebufferDescription m_FramebufferDescription;
 
 	VkSwapchainKHR m_SwapChain;
 	std::vector<VkImage> m_SwapChainImages;
