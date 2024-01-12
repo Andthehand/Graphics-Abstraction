@@ -1,7 +1,7 @@
 #include "VkBuffer.h"
 #include "VkDevice.h"
 
-Buffer::Buffer(BufferDescription description) \
+Buffer::Buffer(BufferDescription description)
     : m_Description(description) {
     VkDevice device = Device::Get().GetDevice();
 

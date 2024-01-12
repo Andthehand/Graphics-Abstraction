@@ -1,10 +1,10 @@
-#include "VkFrameBuffer.h"
+#include "VkFramebuffer.h"
 
 #include "Application.h"
 
 #include "VkDevice.h"
 
-FrameBuffer::FrameBuffer(const FramebufferDescription& frameBufferSpecification) 
+Framebuffer::Framebuffer(const FramebufferDescription& frameBufferSpecification) 
 	: m_FramebufferDescription(frameBufferSpecification) {
 	CreateSwapChain();
 	CreateImageViews();
@@ -12,22 +12,19 @@ FrameBuffer::FrameBuffer(const FramebufferDescription& frameBufferSpecification)
 	CreateFramebuffers();
 }
 
-FrameBuffer::~FrameBuffer() {
-	VkDevice device = Device::Get().GetDevice();
-
-	for (auto framebuffer : m_Framebuffers) {
-		vkDestroyFramebuffer(device, framebuffer, nullptr);
-	}
-
-    for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
-        vkDestroyImageView(device, m_SwapChainImageViews[i], nullptr);
-    }
-
-    vkDestroySwapchainKHR(device, m_SwapChain, nullptr);
-    vkDestroyRenderPass(device, m_RenderPass, nullptr);
+Framebuffer::~Framebuffer() {
+    CleanupSwapChain();
 }
 
-void FrameBuffer::CreateSwapChain() {
+void Framebuffer::ReCreate() {
+    CleanupSwapChain();
+
+    CreateSwapChain();
+    CreateImageViews();
+    CreateFramebuffers();
+}
+
+void Framebuffer::CreateSwapChain() {
     VkDevice device = Device::Get().GetDevice();
     VkSurfaceKHR surface = Device::Get().GetSurface();
     SwapChainSupportDetails swapChainSupport = Device::Get().GetSwapChainSupport();
@@ -71,17 +68,17 @@ void FrameBuffer::CreateSwapChain() {
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_SwapChain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_Swapchain) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(device, m_SwapChain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(device, m_Swapchain, &imageCount, nullptr);
     m_SwapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device, m_SwapChain, &imageCount, m_SwapChainImages.data());
+    vkGetSwapchainImagesKHR(device, m_Swapchain, &imageCount, m_SwapChainImages.data());
     m_SwapChainImageFormat = surfaceFormat.format;
 }
 
-void FrameBuffer::CreateImageViews() {
+void Framebuffer::CreateImageViews() {
     VkDevice device = Device::Get().GetDevice();
     m_SwapChainImageViews.resize(m_SwapChainImages.size());
 
@@ -110,7 +107,7 @@ void FrameBuffer::CreateImageViews() {
     }
 }
 
-void FrameBuffer::CreateRenderPass() {
+void Framebuffer::CreateRenderPass() {
     VkDevice device = Device::Get().GetDevice();
 
     VkAttachmentDescription colorAttachment{};
@@ -151,7 +148,7 @@ void FrameBuffer::CreateRenderPass() {
 }
 
 
-void FrameBuffer::CreateFramebuffers() {
+void Framebuffer::CreateFramebuffers() {
     VkDevice device = Device::Get().GetDevice();
     m_Framebuffers.resize(m_SwapChainImageViews.size());
 
@@ -175,7 +172,22 @@ void FrameBuffer::CreateFramebuffers() {
     }
 }
 
-VkSurfaceFormatKHR FrameBuffer::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+void Framebuffer::CleanupSwapChain() {
+    VkDevice device = Device::Get().GetDevice();
+
+    for (auto framebuffer : m_Framebuffers) {
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+    }
+
+    for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
+        vkDestroyImageView(device, m_SwapChainImageViews[i], nullptr);
+    }
+
+    vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
+    vkDestroyRenderPass(device, m_RenderPass, nullptr);
+}
+
+VkSurfaceFormatKHR Framebuffer::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
@@ -185,7 +197,7 @@ VkSurfaceFormatKHR FrameBuffer::ChooseSwapSurfaceFormat(const std::vector<VkSurf
     return availableFormats[0];
 }
 
-VkPresentModeKHR FrameBuffer::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+VkPresentModeKHR Framebuffer::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
     //for (const auto& availablePresentMode : availablePresentModes) {
     //    if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
     //        return availablePresentMode;
@@ -195,7 +207,7 @@ VkPresentModeKHR FrameBuffer::ChooseSwapPresentMode(const std::vector<VkPresentM
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D FrameBuffer::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+VkExtent2D Framebuffer::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
     if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)()) {
         return capabilities.currentExtent;
     }

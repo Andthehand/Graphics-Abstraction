@@ -5,6 +5,8 @@
 #include <filesystem>
 
 #include "VkBuffer.h"
+#include "VkShader.h"
+#include "VkFramebuffer.h"
 
 enum class DynamicStates {
 	Viewport,
@@ -13,14 +15,13 @@ enum class DynamicStates {
 };
 
 struct PipelineDescription {
-	//TODO: Add Vertex and fragment shaders
+	std::shared_ptr<Framebuffer> Framebuffer;
 
-	Buffer VertexBuffer;
+	std::shared_ptr<Shader> Shaders;
+
+	std::shared_ptr<Buffer> VertexBuffer;
 
 	std::vector<DynamicStates> DynamicStates;
-
-	VkExtent2D ViewportExtent;
-	VkFormat ColorFormat;
 
 	std::vector<VkDynamicState> GetVkDynamicStates() {
 		std::vector<VkDynamicState> dynamicStates;
@@ -45,16 +46,20 @@ class Pipeline {
 public:
 	Pipeline(PipelineDescription pipelineDescription);
 	~Pipeline();
+
+	void Bind(const VkCommandBuffer commandBuffer);
+
+	void BeginRenderPass(const VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+	void RecreateSwapchain();
+
+	inline VkSwapchainKHR GetSwapchain() const { return m_PipelineDescription.Framebuffer->GetSwapchain(); }
+	inline VkExtent2D GetExtent() const { return m_PipelineDescription.Framebuffer->GetExtent(); }
+	inline VkRenderPass GetRenderPass() const { return m_PipelineDescription.Framebuffer->GetRenderPass(); }
+	inline VkFramebuffer GetFramebuffer(uint32_t index) const { return m_PipelineDescription.Framebuffer->GetFramebuffer(index); }
 private:
-	void CreateRenderPass();
 	void CreatePipeline();
-
-	//TODO: Move this to a shader class
-	VkShaderModule CreateShaderModule(const std::vector<char>& code);
-	std::vector<char> ReadFile(const std::filesystem::path& filename);
 private:
-	VkRenderPass m_RenderPass;
-
 	PipelineDescription m_PipelineDescription;
 	VkPipeline m_Pipeline;
 	VkPipelineLayout m_PipelineLayout;

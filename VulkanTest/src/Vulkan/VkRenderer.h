@@ -8,6 +8,8 @@
 
 #include "VkBuffer.h"
 #include "VkFrameBuffer.h"
+#include "VkPipeline.h"
+#include "VkShader.h"
 
 struct QuadVertex {
 	glm::vec2 pos;
@@ -25,12 +27,7 @@ struct RendererData {
 	static const uint32_t MaxVertices = MaxQuads * 4;
 	static const uint32_t MaxIndices = MaxQuads * 6;
 
-	std::unique_ptr<FrameBuffer> m_FrameBuffer;
-
-	VkPipelineLayout m_PipelineLayout;
-	VkPipeline m_GraphicsPipeline;
-
-	std::unique_ptr<Buffer> VertexBuffer;
+	std::unique_ptr<Pipeline> m_Pipeline;
 
 	VkCommandPool m_CommandPool;
 	std::vector<VkCommandBuffer> m_CommandBuffers;
@@ -46,19 +43,14 @@ public:
 	static void Shutdown();
 
 	static void DrawFrame();
-
 private:
-	static void CreatePipeline();
-
 	static void CreateCommandPool();
 	static void CreateCommandBuffer();
 	static void RecordCommandBuffer(const VkCommandBuffer commandBuffer, const uint32_t imageIndex);
 
 	static void CreateSyncObjects();
 
-	//TODO: Move this to a shader class
-	static VkShaderModule CreateShaderModule(const std::vector<char>& code);
-	static std::vector<char> ReadFile(const std::filesystem::path& filename);
+	static void RecreateSwapchain();
 private:
 	inline static RendererData s_Data;
 };

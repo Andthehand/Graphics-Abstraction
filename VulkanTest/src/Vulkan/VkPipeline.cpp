@@ -1,72 +1,54 @@
 #include "VkPipeline.h"
 
-#include "VkDevice.h"
-
 #include <fstream>
+
+#include "VkDevice.h"
+#include "Renderer/RenderCommand.h"
+
 
 Pipeline::Pipeline(PipelineDescription pipelineDescription) 
     : m_PipelineDescription(pipelineDescription) {
-	CreateRenderPass();
 	CreatePipeline();
 }
 
-void Pipeline::CreateRenderPass() {
+Pipeline::~Pipeline() {
     VkDevice device = Device::Get().GetDevice();
 
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = m_PipelineDescription.ColorFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	vkDestroyPipeline(device, m_Pipeline, nullptr);
+	vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
+}
 
-    VkAttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+void Pipeline::Bind(const VkCommandBuffer commandBuffer) {
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
+    m_PipelineDescription.VertexBuffer->Bind(commandBuffer);
+}
 
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
+void Pipeline::BeginRenderPass(const VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_PipelineDescription.Framebuffer->GetRenderPass();
+    renderPassInfo.framebuffer = m_PipelineDescription.Framebuffer->GetFramebuffer(imageIndex);
+    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.extent = m_PipelineDescription.Framebuffer->GetExtent();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create render pass!");
-    }
+    const glm::vec4& clearColor = RenderCommand::GetRendererAPI()->GetClearColor();
+    VkClearValue clearColorValue = { {clearColor.r, clearColor.g, clearColor.b, clearColor.a} };
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColorValue;
+
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void Pipeline::RecreateSwapchain() {
+
 }
 
 void Pipeline::CreatePipeline() {
     VkDevice device = Device::Get().GetDevice();
-    const BufferDescription& bufferDescription = m_PipelineDescription.VertexBuffer.GetDescription();
+    const BufferDescription& bufferDescription = m_PipelineDescription.VertexBuffer->GetDescription();
 
-    auto vertShaderCode = ReadFile("shaders/vert.spv");
-    auto fragShaderCode = ReadFile("shaders/frag.spv");
-
-    VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
-
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = vertShaderModule;
-    vertShaderStageInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShaderModule;
-    fragShaderStageInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages = m_PipelineDescription.Shaders->GetShaderStages();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -97,17 +79,19 @@ void Pipeline::CreatePipeline() {
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+    VkExtent2D framebufferExtent = m_PipelineDescription.Framebuffer->GetExtent();
+
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = m_PipelineDescription.ViewportExtent.width;
-    viewport.height = m_PipelineDescription.ViewportExtent.height;
+    viewport.width = framebufferExtent.width;
+    viewport.height = framebufferExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
-    scissor.extent = m_PipelineDescription.ViewportExtent;
+    scissor.extent = framebufferExtent;
 
     std::vector<VkDynamicState> dynamicStates = m_PipelineDescription.GetVkDynamicStates();
 
@@ -179,8 +163,8 @@ void Pipeline::CreatePipeline() {
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.stageCount = shaderStages.size();
+    pipelineInfo.pStages = shaderStages.data();
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
@@ -190,7 +174,7 @@ void Pipeline::CreatePipeline() {
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_PipelineLayout;
-    pipelineInfo.renderPass = m_RenderPass;
+    pipelineInfo.renderPass = m_PipelineDescription.Framebuffer->GetRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1; // Optional
@@ -198,40 +182,4 @@ void Pipeline::CreatePipeline() {
     if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
-
-    vkDestroyShaderModule(device, fragShaderModule, nullptr);
-    vkDestroyShaderModule(device, vertShaderModule, nullptr);
-}
-
-VkShaderModule Pipeline::CreateShaderModule(const std::vector<char>& code) {
-    VkDevice device = Device::Get().GetDevice();
-
-    VkShaderModuleCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module!");
-    }
-
-    return shaderModule;
-}
-
-std::vector<char> Pipeline::ReadFile(const std::filesystem::path& filename) {
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-    if (!file.is_open()) {
-        throw std::runtime_error("failed to open file!");
-    }
-
-    size_t fileSize = (size_t)file.tellg();
-    std::vector<char> buffer(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-    file.close();
-
-    return buffer;
 }

@@ -45,7 +45,7 @@
     <ClInclude Include="src\Vulkan\VkDevice.h">
       <Filter>src\Vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="src\Vulkan\VkFrameBuffer.h">
+    <ClInclude Include="src\Vulkan\VkFramebuffer.h">
       <Filter>src\Vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\Vulkan\VkPipeline.h">
@@ -1307,6 +1307,7 @@
     </ClInclude>
     <ClInclude Include="src\Vulkan\VkRendererAPI.h" />
     <ClInclude Include="src\Renderer\RenderCommand.h" />
+    <ClInclude Include="src\Vulkan\VkShader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Application.cpp">
@@ -1321,7 +1322,7 @@
     <ClCompile Include="src\Vulkan\VkDevice.cpp">
       <Filter>src\Vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="src\Vulkan\VkFrameBuffer.cpp">
+    <ClCompile Include="src\Vulkan\VkFramebuffer.cpp">
       <Filter>src\Vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\Vulkan\VkPipeline.cpp">
@@ -1335,5 +1336,6 @@
     </ClCompile>
     <ClCompile Include="src\Vulkan\VkRendererAPI.cpp" />
     <ClCompile Include="src\Renderer\RenderCommand.cpp" />
+    <ClCompile Include="src\Vulkan\VkShader.cpp" />
   </ItemGroup>
 </Project>

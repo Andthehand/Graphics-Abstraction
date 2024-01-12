@@ -146,7 +146,7 @@
     <ClInclude Include="src\GraphicsAPI.h" />
     <ClInclude Include="src\Vulkan\VkBuffer.h" />
     <ClInclude Include="src\Vulkan\VkDevice.h" />
-    <ClInclude Include="src\Vulkan\VkFrameBuffer.h" />
+    <ClInclude Include="src\Vulkan\VkFramebuffer.h" />
     <ClInclude Include="src\Vulkan\VkPipeline.h" />
     <ClInclude Include="src\Vulkan\VkRenderer.h" />
     <ClInclude Include="src\Windows\Window.h" />
@@ -567,6 +567,7 @@
     <ClInclude Include="vendor\glm\glm\vec4.hpp" />
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp" />
     <ClInclude Include="src\Vulkan\VkRendererAPI.h" />
+    <ClInclude Include="src\Vulkan\VkShader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer\RenderCommand.cpp" />
@@ -574,11 +575,12 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Vulkan\VkBuffer.cpp" />
     <ClCompile Include="src\Vulkan\VkDevice.cpp" />
-    <ClCompile Include="src\Vulkan\VkFrameBuffer.cpp" />
+    <ClCompile Include="src\Vulkan\VkFramebuffer.cpp" />
     <ClCompile Include="src\Vulkan\VkPipeline.cpp" />
     <ClCompile Include="src\Vulkan\VkRenderer.cpp" />
     <ClCompile Include="src\Windows\Window.cpp" />
     <ClCompile Include="src\Vulkan\VkRendererAPI.cpp" />
+    <ClCompile Include="src\Vulkan\VkShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="vendor\GLFW\GLFW.vcxproj">

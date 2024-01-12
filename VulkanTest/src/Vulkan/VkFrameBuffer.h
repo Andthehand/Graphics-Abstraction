@@ -74,17 +74,20 @@ struct FramebufferDescription {
 	}
 };
 
-class FrameBuffer {
+class Framebuffer {
 public:
-	FrameBuffer(const FramebufferDescription& frameBufferSpecification);
-	~FrameBuffer();
+	Framebuffer(const FramebufferDescription& frameBufferSpecification);
+	~Framebuffer();
 
-	VkSwapchainKHR GetSwapChain() const { return m_SwapChain; }
+	void ReCreate();
+
+	VkSwapchainKHR GetSwapchain() const { return m_Swapchain; }
 	VkRenderPass GetRenderPass() const { return m_RenderPass; }
 
 	VkFramebuffer GetFramebuffer(uint32_t index) const { return m_Framebuffers[index]; }
 
 	const VkExtent2D& GetExtent() const { return m_SwapChainExtent; }
+	const VkFormat& GetColorFormat() const { return m_SwapChainImageFormat; }
 private:
 	void CreateSwapChain();
 	void CreateImageViews();
@@ -93,13 +96,15 @@ private:
 
 	void CreateFramebuffers();
 
+	void CleanupSwapChain();
+
 	VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 private:
 	FramebufferDescription m_FramebufferDescription;
 
-	VkSwapchainKHR m_SwapChain;
+	VkSwapchainKHR m_Swapchain;
 	std::vector<VkImage> m_SwapChainImages;
 	VkFormat m_SwapChainImageFormat;
 	VkExtent2D m_SwapChainExtent;
